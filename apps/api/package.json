@@ -1,0 +1,23 @@
+{
+  "name": "@cvai/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "PORT=3001 bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@cvai/schema": "workspace:*",
+    "@elysiajs/cors": "^1.1.0",
+    "@elysiajs/swagger": "^1.1.6",
+    "@sinclair/typebox": "^0.34.13",
+    "consola": "^3.4.2",
+    "elysia": "^1.2.14"
+  },
+  "devDependencies": {
+    "@cvai/config": "workspace:*",
+    "typescript": "^6.0.2"
+  }
+}

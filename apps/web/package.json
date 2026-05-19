@@ -1,0 +1,29 @@
+{
+  "name": "@cvai/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "PORT=3000 next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@cvai/schema": "workspace:*",
+    "@cvai/ui": "workspace:*",
+    "@radix-ui/themes": "^3.3.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
+    "next": "16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@cvai/config": "workspace:*",
+    "typescript": "^6.0.2"
+  }
+}

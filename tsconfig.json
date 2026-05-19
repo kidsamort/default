@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "apps/web" },
+    { "path": "apps/api" },
+    { "path": "apps/docs" },
+    { "path": "apps/storybook" },
+    { "path": "packages/ui" },
+    { "path": "packages/schema" }
+  ]
+}
