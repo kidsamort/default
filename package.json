@@ -33,6 +33,7 @@
     "dev": "bun run clean && turbo dev",
     "clean": "fuser -k 3000/tcp 3001/tcp 3002/tcp || true",
     "lint": "turbo lint",
+    "lint:fix": "biome check --write --unsafe .",
     "format": "biome format --write .",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
