@@ -4,6 +4,7 @@ import { Card } from "./card";
 const meta: Meta<typeof Card> = {
   title: "Components/Card",
   component: Card,
+  tags: ["autodocs"],
   argTypes: {
     variant: {
       control: "select",

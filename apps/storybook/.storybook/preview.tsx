@@ -1,6 +1,6 @@
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "../../../packages/ui/src/styles/tokens.css";
 import {
   accentColors,
@@ -12,54 +12,35 @@ import {
   DocsContainer,
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
-import { useGlobals } from "storybook/preview-api";
+import { themes } from "storybook/theming";
 import type { Preview } from "@storybook/react-vite";
 
-const ExampleContainer = ({ children, ...props }: DocsContainerProps) => {
-  const [
-    { appearance, accentColor, grayColor, panelBackground, radius, scaling },
-  ] = useGlobals();
+const ExampleContainer = ({
+  children,
+  context,
+  ...props
+}: DocsContainerProps) => {
+  const [isDark, setIsDark] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
 
-  const effectiveAppearance =
-    appearance === "light" || appearance === "dark" ? appearance : "light";
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
+
+  const storybookTheme = isDark ? themes.dark : themes.light;
 
   return (
-    <Theme
-      appearance={effectiveAppearance}
-      accentColor={accentColor}
-      grayColor={grayColor}
-      panelBackground={panelBackground}
-      radius={radius}
-      scaling={scaling}
-    >
-      <DocsContainer
-        {...props}
-        theme={{
-          base: "light",
-          brandTitle: undefined,
-          brandUrl: undefined,
-          brandTarget: undefined,
-          colorPrimary: `var(--gray-12)`,
-          colorSecondary: `var(--accent-9)`,
-          appBg: `var(--gray-1)`,
-          appContentBg: `var(--gray-1)`,
-          appPreviewBg: `var(--gray-1)`,
-          textColor: `var(--gray-12)`,
-          barBg: `var(--gray-1)`,
-          barTextColor: `var(--gray-12)`,
-          buttonBg: `var(--gray-3)`,
-          buttonBorder: `var(--gray-6)`,
-          fontBase: "var(--default-font-family)",
-          fontCode: "var(--default-font-family)",
-          borderRadius: 4,
-          inputBg: `var(--gray-2)`,
-          inputBorder: `var(--gray-6)`,
-          inputTextColor: `var(--gray-12)`,
-        }}
-      >
-        {children}
-      </DocsContainer>
-    </Theme>
+    <DocsContainer context={context} {...props} theme={storybookTheme}>
+      {children}
+    </DocsContainer>
   );
 };
 

@@ -23,3 +23,17 @@
   --z-index-overlay: 100;
   --z-index-modal: 1000;
 }
+
+/* Style Storybook Docs preview boxes to match Radix UI theme */
+.docs-story,
+.sb-story,
+.sb-docs-preview {
+  background-color: var(--gray-1) !important;
+  color: var(--gray-12) !important;
+  border-color: var(--gray-6) !important;
+}
+
+.docs-story *,
+.sb-story * {
+  border-color: var(--gray-6);
+}
