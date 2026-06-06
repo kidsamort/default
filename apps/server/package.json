@@ -13,11 +13,11 @@
     "@elysiajs/cors": "^1.1.0",
     "@elysiajs/swagger": "^1.1.6",
     "@sinclair/typebox": "^0.34.13",
-    "consola": "^3.4.2",
+    "consola": "catalog:",
     "elysia": "^1.2.14"
   },
   "devDependencies": {
     "@cvai/config": "workspace:*",
-    "typescript": "^6.0.2"
+    "typescript": "catalog:"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "extends": "@cvai/config/typescript/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", ".storybook"],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "../../packages/ui" }]
+}

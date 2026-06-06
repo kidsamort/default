@@ -1,0 +1,39 @@
+{
+  "name": "@cvai/storybook",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "biome lint .",
+    "format": "biome format --write src",
+    "dev": "storybook dev -p 6006",
+    "build": "storybook build"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.1.1",
+    "@cvai/config": "workspace:*",
+    "@radix-ui/themes": "catalog:",
+    "@storybook/addon-a11y": "^10.3.3",
+    "@storybook/addon-docs": "^10.3.3",
+    "@storybook/addon-onboarding": "^10.3.3",
+    "@storybook/addon-vitest": "^10.3.3",
+    "@storybook/preview-api": "^8.6.14",
+    "@storybook/react-vite": "^10.3.3",
+    "@storybook/test": "^8.6.15",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/browser-playwright": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "playwright": "^1.58.2",
+    "storybook": "^10.3.3",
+    "typescript": "catalog:",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.2"
+  }
+}

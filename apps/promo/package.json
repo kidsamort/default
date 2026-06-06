@@ -12,18 +12,18 @@
   "dependencies": {
     "@cvai/schema": "workspace:*",
     "@cvai/ui": "workspace:*",
-    "@radix-ui/themes": "^3.3.0",
-    "lucide-react": "^1.7.0",
+    "@radix-ui/themes": "catalog:",
+    "lucide-react": "catalog:",
     "next": "16.2.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "zustand": "^5.0.14"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@cvai/config": "workspace:*",
-    "typescript": "^6.0.2"
+    "typescript": "catalog:"
   }
 }
