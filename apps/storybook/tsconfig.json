@@ -1,5 +1,5 @@
 {
-  "extends": "@cvai/config/typescript/react-library.json",
+  "extends": "@default/config/typescript/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

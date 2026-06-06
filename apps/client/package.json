@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/web",
+  "name": "@default/client",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "@cvai/schema": "workspace:*",
-    "@cvai/ui": "workspace:*",
+    "@default/schema": "workspace:*",
+    "@default/ui": "workspace:*",
     "@radix-ui/themes": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
@@ -24,7 +24,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.0",
     "typescript": "catalog:",
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3"
   }

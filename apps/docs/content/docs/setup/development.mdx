@@ -13,7 +13,7 @@ bun install
 # 2. Подготовка инфраструктуры (в корне проекта или папке docker)
 docker-compose -f docker/docker-compose.yml up -d
 
-# 3. Применение миграций (будет доступно после настройки @cvai/db)
+# 3. Применение миграций (будет доступно после настройки @fod/db)
 bun run db:push
 
 # 4. Запуск всех приложений в dev-режиме
@@ -22,7 +22,7 @@ bun dev
 
 ## Конфигурация Docker
 По умолчанию:
-- **Postgres**: `localhost:5432` (User: `user`, Pass: `password`, DB: `cv_ai`)
+- **Postgres**: `localhost:5432` (User: `user`, Pass: `password`, DB: `fod`)
 - **Redis**: `localhost:6379`
 - **Frontend**: `localhost:3000`
 - **API**: `localhost:3001`

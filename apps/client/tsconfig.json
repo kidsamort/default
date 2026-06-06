@@ -1,5 +1,5 @@
 {
-  "extends": "@cvai/config/typescript/base.json",
+  "extends": "@default/config/typescript/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],

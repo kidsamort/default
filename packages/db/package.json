@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/db",
+  "name": "@default/db",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -17,7 +17,7 @@
     "postgres": "catalog:db"
   },
   "devDependencies": {
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "drizzle-kit": "catalog:db",
     "typescript": "catalog:"
   }

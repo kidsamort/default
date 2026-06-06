@@ -8,16 +8,17 @@ import {
   radii,
   themePropDefs,
 } from "@radix-ui/themes/props";
-import type { Preview } from "@storybook/react-vite";
 import {
   DocsContainer,
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
 import { useGlobals } from "@storybook/preview-api";
+import type { Preview } from "@storybook/react-vite";
 
 const ExampleContainer = ({ children, ...props }: DocsContainerProps) => {
-  const [{ appearance, accentColor, grayColor, panelBackground, radius, scaling }] =
-    useGlobals();
+  const [
+    { appearance, accentColor, grayColor, panelBackground, radius, scaling },
+  ] = useGlobals();
 
   const effectiveAppearance =
     appearance === "light" || appearance === "dark" ? appearance : "light";

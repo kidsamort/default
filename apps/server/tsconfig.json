@@ -1,5 +1,5 @@
 {
-  "extends": "@cvai/config/typescript/node.json",
+  "extends": "@default/config/typescript/node.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"

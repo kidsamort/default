@@ -1,8 +1,7 @@
-import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
-import { Type } from "@sinclair/typebox";
 import consola from "consola";
+import { Elysia } from "elysia";
 
 const app = new Elysia()
   .use(cors())
@@ -15,7 +14,7 @@ const app = new Elysia()
           version: "1.0.0",
         },
       },
-    })
+    }),
   )
   .get("/", () => {
     return {

@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/web",
+  "name": "@default/promo",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "@cvai/schema": "workspace:*",
-    "@cvai/ui": "workspace:*",
+    "@default/schema": "workspace:*",
+    "@default/ui": "workspace:*",
     "@radix-ui/themes": "catalog:",
     "lucide-react": "catalog:",
     "next": "16.2.1",
@@ -23,7 +23,7 @@
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

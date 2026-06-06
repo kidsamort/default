@@ -1,0 +1,25 @@
+:root {
+  /* 
+     Border Width Scale (Systemic extension for Radix)
+     Standardized thickness for use across all components.
+  */
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-3: 3px;
+
+  /* Custom Spacing Extensions (if Radix steps are too large) */
+  --space-0-5: 2px;
+  --space-1-5: 6px;
+
+  /* Micro-typography */
+  --font-size-tiny: 10px;
+
+  /* Performance-tuned Animations */
+  --transition-fast: 0.15s ease-out;
+  --transition-normal: 0.25s ease-in-out;
+
+  /* Layer Management */
+  --z-index-badge: 10;
+  --z-index-overlay: 100;
+  --z-index-modal: 1000;
+}

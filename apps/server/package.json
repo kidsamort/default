@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/api",
+  "name": "@default/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "@cvai/schema": "workspace:*",
+    "@default/schema": "workspace:*",
     "@elysiajs/cors": "^1.1.0",
     "@elysiajs/swagger": "^1.1.6",
     "@sinclair/typebox": "^0.34.13",
@@ -17,7 +17,7 @@
     "elysia": "^1.2.14"
   },
   "devDependencies": {
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

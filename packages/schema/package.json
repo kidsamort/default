@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/schema",
+  "name": "@default/schema",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -12,7 +12,7 @@
     "@sinclair/typebox": "^0.34.13"
   },
   "devDependencies": {
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

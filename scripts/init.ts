@@ -1,12 +1,20 @@
 #!/usr/bin/env bun
+
 /**
  * Interactive project initializer
  * Run with: bun run init
  */
 
-import { existsSync, writeFileSync, readFileSync, rmSync, readdirSync, renameSync } from "fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import * as readline from "node:readline";
 import { createConsola } from "consola";
-import * as readline from "readline";
 
 // Setup consola without timestamps
 const consola = createConsola({
@@ -33,7 +41,11 @@ function c(text: string, color: string): string {
 }
 
 // Interactive selector with arrow keys
-async function selectInteractive(message: string, options: string[], multi = false): Promise<number[] | number> {
+async function selectInteractive(
+  message: string,
+  options: string[],
+  multi = false,
+): Promise<number[] | number> {
   return new Promise((resolve) => {
     const isTTY = process.stdin.isTTY;
     if (isTTY) {
@@ -55,11 +67,22 @@ async function selectInteractive(message: string, options: string[], multi = fal
         readline.clearScreenDown(process.stdout);
       }
 
-      process.stdout.write(c("? ", colors.yellow) + message + "\n");
+      process.stdout.write(`${c("? ", colors.yellow) + message}\n`);
       if (multi) {
-        process.stdout.write("   " + c("(use ↑↓ to navigate, space to select, enter to confirm)", colors.gray) + "\n");
+        process.stdout.write(
+          "   " +
+            c(
+              "(use ↑↓ to navigate, space to select, enter to confirm)",
+              colors.gray,
+            ) +
+            "\n",
+        );
       } else {
-        process.stdout.write("   " + c("(use ↑↓ to navigate, enter to select)", colors.gray) + "\n");
+        process.stdout.write(
+          "   " +
+            c("(use ↑↓ to navigate, enter to select)", colors.gray) +
+            "\n",
+        );
       }
       process.stdout.write("\n");
 
@@ -67,25 +90,27 @@ async function selectInteractive(message: string, options: string[], multi = fal
         const isCurrent = i === cursor;
         const isSelected = selected.has(i);
 
-        let prefix = isCurrent ? c("› ", colors.green) : "  ";
+        const prefix = isCurrent ? c("› ", colors.green) : "  ";
         let label = opt;
 
         if (multi) {
-          const checkbox = isSelected ? c("◉", colors.green) : c("◯", colors.gray);
-          label = checkbox + " " + opt;
+          const checkbox = isSelected
+            ? c("◉", colors.green)
+            : c("◯", colors.gray);
+          label = `${checkbox} ${opt}`;
         }
 
         if (isCurrent) {
           label = c(label, colors.bold);
         }
 
-        process.stdout.write(prefix + label + "\n");
+        process.stdout.write(`${prefix + label}\n`);
       });
     };
 
     render(true);
 
-    const onKeypress = (str: string, key: any) => {
+    const onKeypress = (_str: string, key: { ctrl: boolean; name: string }) => {
       // Ctrl+C - exit
       if (key.ctrl && key.name === "c") {
         process.stdout.write("\x1B[?25h"); // Show cursor
@@ -106,10 +131,18 @@ async function selectInteractive(message: string, options: string[], multi = fal
         readline.clearScreenDown(process.stdout);
 
         const resultLabel = multi
-          ? Array.from(selected).map(i => options[i].split(" ")[0]).join(", ") || "none"
+          ? Array.from(selected)
+              .map((i) => options[i].split(" ")[0])
+              .join(", ") || "none"
           : options[cursor].split(" ")[0];
 
-        process.stdout.write(c("? ", colors.yellow) + message + ": " + c(resultLabel, colors.cyan) + "\n");
+        process.stdout.write(
+          c("? ", colors.yellow) +
+            message +
+            ": " +
+            c(resultLabel, colors.cyan) +
+            "\n",
+        );
 
         if (multi) {
           resolve(Array.from(selected));
@@ -156,7 +189,8 @@ async function main() {
   };
   const hasArg = (name: string): boolean => args.includes(name);
 
-  const isNonInteractive = hasArg("--yes") || hasArg("-y") || hasArg("--non-interactive");
+  const isNonInteractive =
+    hasArg("--yes") || hasArg("-y") || hasArg("--non-interactive");
 
   // Get project name from package.json
   const pkgPath = join(ROOT, "package.json");
@@ -173,10 +207,16 @@ async function main() {
         input: process.stdin,
         output: process.stdout,
       });
-      rl.question(c("? ", colors.yellow) + "Project name [" + c(projectName, colors.green) + "]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim() || projectName);
-      });
+      rl.question(
+        c("? ", colors.yellow) +
+          "Project name [" +
+          c(projectName, colors.green) +
+          "]: ",
+        (answer) => {
+          rl.close();
+          resolve(answer.trim() || projectName);
+        },
+      );
     });
     projectName = nameInput;
   }
@@ -191,10 +231,16 @@ async function main() {
         input: process.stdin,
         output: process.stdout,
       });
-      rl.question(c("? ", colors.yellow) + "Org/Package prefix [" + c("default", colors.green) + "]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim() || "default");
-      });
+      rl.question(
+        c("? ", colors.yellow) +
+          "Org/Package prefix [" +
+          c("default", colors.green) +
+          "]: ",
+        (answer) => {
+          rl.close();
+          resolve(answer.trim() || "default");
+        },
+      );
     });
     orgPrefix = orgInput;
   }
@@ -204,7 +250,10 @@ async function main() {
   const appsArg = getArgValue("--apps");
 
   if (appsArg) {
-    selectedApps = appsArg.split(",").map(a => allApps.indexOf(a.trim())).filter(i => i !== -1);
+    selectedApps = appsArg
+      .split(",")
+      .map((a) => allApps.indexOf(a.trim()))
+      .filter((i) => i !== -1);
   } else if (!isNonInteractive) {
     consola.log("");
     consola.start("Select Apps to Include");
@@ -214,7 +263,11 @@ async function main() {
       "docs (Fumadocs documentation)",
       "storybook (Component playground)",
     ];
-    selectedApps = await selectInteractive("Apps", appOptions, true) as number[];
+    selectedApps = (await selectInteractive(
+      "Apps",
+      appOptions,
+      true,
+    )) as number[];
   }
 
   // Web Framework Selection (if web app is selected)
@@ -224,7 +277,10 @@ async function main() {
 
   if (hasWebApp) {
     if (frameworkArg) {
-      if (frameworkArg.toLowerCase() === "vite" || frameworkArg.toLowerCase() === "react") {
+      if (
+        frameworkArg.toLowerCase() === "vite" ||
+        frameworkArg.toLowerCase() === "react"
+      ) {
         webFrameworkChoice = 1;
       } else {
         webFrameworkChoice = 0;
@@ -232,8 +288,15 @@ async function main() {
     } else if (!isNonInteractive) {
       consola.log("");
       consola.start("Frontend Framework Configuration");
-      const frameworkOptions = ["Next.js 16 (Full-stack Router)", "Vite + React 19 (SPA Client)"];
-      webFrameworkChoice = await selectInteractive("Frontend Framework", frameworkOptions, false) as number;
+      const frameworkOptions = [
+        "Next.js 16 (Full-stack Router)",
+        "Vite + React 19 (SPA Client)",
+      ];
+      webFrameworkChoice = (await selectInteractive(
+        "Frontend Framework",
+        frameworkOptions,
+        false,
+      )) as number;
     }
   }
 
@@ -242,7 +305,10 @@ async function main() {
   const pkgsArg = getArgValue("--pkgs");
 
   if (pkgsArg) {
-    selectedPkgs = pkgsArg.split(",").map(p => allPkgs.indexOf(p.trim())).filter(i => i !== -1);
+    selectedPkgs = pkgsArg
+      .split(",")
+      .map((p) => allPkgs.indexOf(p.trim()))
+      .filter((i) => i !== -1);
   } else if (!isNonInteractive) {
     consola.log("");
     consola.start("Select Packages to Include");
@@ -252,7 +318,11 @@ async function main() {
       "db (Database support with Drizzle ORM)",
       "config (Shared TypeScript configs)",
     ];
-    selectedPkgs = await selectInteractive("Packages", pkgOptions, true) as number[];
+    selectedPkgs = (await selectInteractive(
+      "Packages",
+      pkgOptions,
+      true,
+    )) as number[];
   }
 
   let dbChoice = 2; // None
@@ -270,7 +340,11 @@ async function main() {
       consola.log("");
       consola.start("Database Configuration");
       const dbOptions = ["PostgreSQL", "SQLite", "None (skip DB setup)"];
-      dbChoice = await selectInteractive("Database", dbOptions, false) as number;
+      dbChoice = (await selectInteractive(
+        "Database",
+        dbOptions,
+        false,
+      )) as number;
     }
   }
 
@@ -288,37 +362,63 @@ async function main() {
   } else {
     consola.log("");
     consola.start("Docker Services Configuration");
-    
+
     includeRedis = await new Promise<boolean>((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      rl.question(c("? ", colors.yellow) + "Include Redis cache support? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
       });
+      rl.question(
+        `${c("? ", colors.yellow)}Include Redis cache support? [Y/n]: `,
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
 
     includeS3 = await new Promise<boolean>((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      rl.question(c("? ", colors.yellow) + "Include S3 Storage (MinIO) support? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
       });
+      rl.question(
+        `${c("? ", colors.yellow)}Include S3 Storage (MinIO) support? [Y/n]: `,
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
 
     includeNginx = await new Promise<boolean>((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      rl.question(c("? ", colors.yellow) + "Include Nginx reverse proxy in production? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
       });
+      rl.question(
+        c("? ", colors.yellow) +
+          "Include Nginx reverse proxy in production? [Y/n]: ",
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
 
     includeMailpit = await new Promise<boolean>((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      rl.question(c("? ", colors.yellow) + "Include Mailpit SMTP server for dev testing? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
       });
+      rl.question(
+        c("? ", colors.yellow) +
+          "Include Mailpit SMTP server for dev testing? [Y/n]: ",
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
   }
 
@@ -332,10 +432,13 @@ async function main() {
         input: process.stdin,
         output: process.stdout,
       });
-      rl.question(c("? ", colors.yellow) + "Initialize fresh Git repository? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
-      });
+      rl.question(
+        `${c("? ", colors.yellow)}Initialize fresh Git repository? [Y/n]: `,
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
   }
 
@@ -348,10 +451,14 @@ async function main() {
         input: process.stdin,
         output: process.stdout,
       });
-      rl.question(c("? ", colors.yellow) + "Delete initialization script after complete? [Y/n]: ", (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() !== "n");
-      });
+      rl.question(
+        c("? ", colors.yellow) +
+          "Delete initialization script after complete? [Y/n]: ",
+        (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() !== "n");
+        },
+      );
     });
   }
 
@@ -361,7 +468,7 @@ async function main() {
 
   // Update package.json with project name
   pkg.name = projectName.toLowerCase().replace(/\s+/g, "-");
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
   // Remove unselected apps and configure the chosen web framework
   const appsDir = join(ROOT, "apps");
@@ -395,7 +502,7 @@ async function main() {
     if (existsSync(appPath)) {
       if (!selectedApps.includes(allApps.indexOf(app))) {
         rmSync(appPath, { recursive: true, force: true });
-        consola.info("Removed apps/" + app);
+        consola.info(`Removed apps/${app}`);
       }
     }
   }
@@ -407,7 +514,7 @@ async function main() {
     if (existsSync(pkgPath)) {
       if (!selectedPkgs.includes(allPkgs.indexOf(pkgName))) {
         rmSync(pkgPath, { recursive: true, force: true });
-        consola.info("Removed packages/" + pkgName);
+        consola.info(`Removed packages/${pkgName}`);
       }
     }
   }
@@ -431,20 +538,20 @@ async function main() {
     }
   });
 
-  writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
+  writeFileSync(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`);
 
   // Update package names in all package.json files
-  const updatePackageJson = (dir: string, type: string, name: string) => {
+  const updatePackageJson = (dir: string, _type: string, name: string) => {
     const path = join(dir, name, "package.json");
     if (existsSync(path)) {
       const content = JSON.parse(readFileSync(path, "utf-8"));
       content.name = `@${orgPrefix}/${name}`;
-      
+
       // Update workspace dependencies
       if (content.dependencies) {
         for (const [key, value] of Object.entries(content.dependencies)) {
-          if (key.startsWith("@cvai/")) {
-            const newKey = key.replace("@cvai/", `@${orgPrefix}/`);
+          if (key.startsWith("@default/")) {
+            const newKey = key.replace("@default/", `@${orgPrefix}/`);
             content.dependencies[newKey] = value;
             delete content.dependencies[key];
           }
@@ -452,20 +559,24 @@ async function main() {
       }
       if (content.devDependencies) {
         for (const [key, value] of Object.entries(content.devDependencies)) {
-          if (key.startsWith("@cvai/")) {
-            const newKey = key.replace("@cvai/", `@${orgPrefix}/`);
+          if (key.startsWith("@default/")) {
+            const newKey = key.replace("@default/", `@${orgPrefix}/`);
             content.devDependencies[newKey] = value;
             delete content.devDependencies[key];
           }
         }
       }
-      
-      writeFileSync(path, JSON.stringify(content, null, 2) + "\n");
+
+      writeFileSync(path, `${JSON.stringify(content, null, 2)}\n`);
     }
   };
 
-  selectedApps.forEach((i) => updatePackageJson(appsDir, "apps", allApps[i]));
-  selectedPkgs.forEach((i) => updatePackageJson(packagesDir, "packages", allPkgs[i]));
+  for (const i of selectedApps) {
+    updatePackageJson(appsDir, "apps", allApps[i]);
+  }
+  for (const i of selectedPkgs) {
+    updatePackageJson(packagesDir, "packages", allPkgs[i]);
+  }
 
   // Setup database files correctly based on choice
   if (selectedPkgs.includes(allPkgs.indexOf("db"))) {
@@ -473,15 +584,15 @@ async function main() {
     if (existsSync(dbPath)) {
       const dbPkgPath = join(dbPath, "package.json");
       const dbPkg = JSON.parse(readFileSync(dbPkgPath, "utf-8"));
-      
+
       if (dbChoice === 0) {
         // PostgreSQL
         dbPkg.dependencies = {
           ...dbPkg.dependencies,
           "drizzle-orm": "^0.38.0",
-          "postgres": "^3.4.5",
+          postgres: "^3.4.5",
         };
-        writeFileSync(dbPkgPath, JSON.stringify(dbPkg, null, 2) + "\n");
+        writeFileSync(dbPkgPath, `${JSON.stringify(dbPkg, null, 2)}\n`);
         consola.success("Configured PostgreSQL package settings");
       } else if (dbChoice === 1) {
         // SQLite
@@ -494,7 +605,7 @@ async function main() {
           ...dbPkg.devDependencies,
           "@types/better-sqlite3": "^7.6.12",
         };
-        writeFileSync(dbPkgPath, JSON.stringify(dbPkg, null, 2) + "\n");
+        writeFileSync(dbPkgPath, `${JSON.stringify(dbPkg, null, 2)}\n`);
 
         // Write SQLite Drizzle Config
         const drizzleConfig = `import { defineConfig } from "drizzle-kit";
@@ -540,21 +651,29 @@ export type NewUser = typeof users.$inferInsert;
       } else {
         // DB package included but no DB configuration selected -> remove db package
         rmSync(dbPath, { recursive: true, force: true });
-        const idx = tsconfig.references.findIndex((r: any) => r.path === "packages/db");
+        const idx = tsconfig.references.findIndex(
+          (r: { path: string }) => r.path === "packages/db",
+        );
         if (idx !== -1) tsconfig.references.splice(idx, 1);
-        writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
+        writeFileSync(tsconfigPath, `${JSON.stringify(tsconfig, null, 2)}\n`);
         consola.info("Removed packages/db (DB type set to None)");
       }
     }
   }
 
-  // Recursively replace {{PROJECT_NAME}} and @cvai/ across the entire workspace
+  // Recursively replace {{PROJECT_NAME}} and @default/ across the entire workspace
   const customizeWorkspace = (dir: string) => {
     if (!existsSync(dir)) return;
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const path = join(dir, entry.name);
-      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".next" || entry.name === ".turbo") continue;
+      if (
+        entry.name === "node_modules" ||
+        entry.name === ".git" ||
+        entry.name === ".next" ||
+        entry.name === ".turbo"
+      )
+        continue;
       if (entry.isDirectory()) {
         customizeWorkspace(path);
       } else if (entry.isFile()) {
@@ -567,14 +686,16 @@ export type NewUser = typeof users.$inferInsert;
             changed = true;
           }
 
-          if (content.includes("@cvai/")) {
-            content = content.replaceAll("@cvai/", `@${orgPrefix}/`);
+          if (content.includes("@default/")) {
+            content = content.replaceAll("@default/", `@${orgPrefix}/`);
             changed = true;
           }
 
           if (changed) {
             writeFileSync(path, content, "utf-8");
-            consola.info(`Updated placeholders in ${join(dir.replace(ROOT, ""), entry.name)}`);
+            consola.info(
+              `Updated placeholders in ${join(dir.replace(ROOT, ""), entry.name)}`,
+            );
           }
         } catch {}
       }
@@ -597,21 +718,28 @@ export type NewUser = typeof users.$inferInsert;
   const usePromo = selectedApps.includes(allApps.indexOf("promo"));
 
   // Delete services files that are not selected (to keep things clean)
-  if (!usePostgres && existsSync(join(servicesDir, "postgres.yml"))) rmSync(join(servicesDir, "postgres.yml"));
-  if (!useRedis && existsSync(join(servicesDir, "redis.yml"))) rmSync(join(servicesDir, "redis.yml"));
-  if (!useS3 && existsSync(join(servicesDir, "minio.yml"))) rmSync(join(servicesDir, "minio.yml"));
-  if (!useServer && existsSync(join(servicesDir, "server.yml"))) rmSync(join(servicesDir, "server.yml"));
-  if (!usePromo && existsSync(join(servicesDir, "promo.yml"))) rmSync(join(servicesDir, "promo.yml"));
-  if (!useClient && existsSync(join(servicesDir, "client.yml"))) rmSync(join(servicesDir, "client.yml"));
+  if (!usePostgres && existsSync(join(servicesDir, "postgres.yml")))
+    rmSync(join(servicesDir, "postgres.yml"));
+  if (!useRedis && existsSync(join(servicesDir, "redis.yml")))
+    rmSync(join(servicesDir, "redis.yml"));
+  if (!useS3 && existsSync(join(servicesDir, "minio.yml")))
+    rmSync(join(servicesDir, "minio.yml"));
+  if (!useServer && existsSync(join(servicesDir, "server.yml")))
+    rmSync(join(servicesDir, "server.yml"));
+  if (!usePromo && existsSync(join(servicesDir, "promo.yml")))
+    rmSync(join(servicesDir, "promo.yml"));
+  if (!useClient && existsSync(join(servicesDir, "client.yml")))
+    rmSync(join(servicesDir, "client.yml"));
   if (!useNginx && existsSync(join(servicesDir, "nginx.yml"))) {
     rmSync(join(servicesDir, "nginx.yml"));
     rmSync(join(dockerDir, "nginx"), { recursive: true, force: true });
   }
-  if (!useMailpit && existsSync(join(servicesDir, "mailpit.yml"))) rmSync(join(servicesDir, "mailpit.yml"));
+  if (!useMailpit && existsSync(join(servicesDir, "mailpit.yml")))
+    rmSync(join(servicesDir, "mailpit.yml"));
 
   // Helper function to build Compose Files
   const buildComposeFile = (env: "dev" | "prod" | "local-prod" | "test") => {
-    let includes: string[] = [];
+    const includes: string[] = [];
     if (usePostgres) includes.push("./services/postgres.yml");
     if (useRedis) includes.push("./services/redis.yml");
     if (useS3) includes.push("./services/minio.yml");
@@ -637,27 +765,32 @@ export type NewUser = typeof users.$inferInsert;
     if (env === "dev" || env === "local-prod") {
       content += "\nservices:\n";
       if (usePostgres) {
-        content += "  db:\n    ports:\n      - \"${DB_PORT:-5432}:5432\"\n";
+        content += '  db:\n    ports:\n      - "${DB_PORT:-5432}:5432"\n';
       }
       if (useRedis) {
-        content += "  redis:\n    ports:\n      - \"${REDIS_PORT:-6379}:6379\"\n";
+        content += '  redis:\n    ports:\n      - "${REDIS_PORT:-6379}:6379"\n';
       }
       if (useS3) {
-        content += "  minio:\n    ports:\n      - \"${MINIO_PORT:-9000}:9000\"\n      - \"${MINIO_CONSOLE_PORT:-9001}:9001\"\n";
+        content +=
+          '  minio:\n    ports:\n      - "${MINIO_PORT:-9000}:9000"\n      - "${MINIO_CONSOLE_PORT:-9001}:9001"\n';
       }
       if (env === "dev" && useMailpit) {
-        content += "  mailpit:\n    ports:\n      - \"${MAILPIT_PORT:-1025}:1025\"\n      - \"${MAILPIT_CONSOLE_PORT:-8025}:8025\"\n";
+        content +=
+          '  mailpit:\n    ports:\n      - "${MAILPIT_PORT:-1025}:1025"\n      - "${MAILPIT_CONSOLE_PORT:-8025}:8025"\n';
       }
       // If Nginx is not used in local-prod, we expose ports directly
       if (env === "local-prod" && !useNginx) {
         if (useServer) {
-          content += "  server:\n    ports:\n      - \"${SERVER_PORT:-3001}:${SERVER_PORT:-3001}\"\n";
+          content +=
+            '  server:\n    ports:\n      - "${SERVER_PORT:-3001}:${SERVER_PORT:-3001}"\n';
         }
         if (useClient) {
-          content += "  client:\n    ports:\n      - \"${CLIENT_PORT:-3000}:${CLIENT_PORT:-3000}\"\n";
+          content +=
+            '  client:\n    ports:\n      - "${CLIENT_PORT:-3000}:${CLIENT_PORT:-3000}"\n';
         }
         if (usePromo) {
-          content += "  promo:\n    ports:\n      - \"${PROMO_PORT:-3002}:${PROMO_PORT:-3002}\"\n";
+          content +=
+            '  promo:\n    ports:\n      - "${PROMO_PORT:-3002}:${PROMO_PORT:-3002}"\n';
         }
       }
     }
@@ -666,15 +799,29 @@ export type NewUser = typeof users.$inferInsert;
   };
 
   // Write compose files inside docker folder
-  writeFileSync(join(dockerDir, "docker-compose.dev.yml"), buildComposeFile("dev"));
-  writeFileSync(join(dockerDir, "docker-compose.prod.yml"), buildComposeFile("prod"));
-  writeFileSync(join(dockerDir, "docker-compose.local-prod.yml"), buildComposeFile("local-prod"));
-  writeFileSync(join(dockerDir, "docker-compose.test.yml"), buildComposeFile("test"));
+  writeFileSync(
+    join(dockerDir, "docker-compose.dev.yml"),
+    buildComposeFile("dev"),
+  );
+  writeFileSync(
+    join(dockerDir, "docker-compose.prod.yml"),
+    buildComposeFile("prod"),
+  );
+  writeFileSync(
+    join(dockerDir, "docker-compose.local-prod.yml"),
+    buildComposeFile("local-prod"),
+  );
+  writeFileSync(
+    join(dockerDir, "docker-compose.test.yml"),
+    buildComposeFile("test"),
+  );
 
   consola.success("Generated dynamic Docker Compose configurations");
 
   // Helper to generate Env Files
-  const buildEnvFile = (env: "development" | "production" | "local-prod" | "test") => {
+  const buildEnvFile = (
+    env: "development" | "production" | "local-prod" | "test",
+  ) => {
     let composeEnv = "dev";
     if (env === "production") composeEnv = "prod";
     if (env === "local-prod") composeEnv = "local-prod";
@@ -687,8 +834,14 @@ PROJECT_NAME=${projectName.toLowerCase().replace(/\s+/g, "-")}
 `;
 
     if (usePostgres) {
-      const dbPassword = env === "production" ? "production_secure_password_replace_me" : "postgres";
-      const dbName = env === "production" ? `${projectName.toLowerCase()}_prod` : projectName.toLowerCase();
+      const dbPassword =
+        env === "production"
+          ? "production_secure_password_replace_me"
+          : "postgres";
+      const dbName =
+        env === "production"
+          ? `${projectName.toLowerCase()}_prod`
+          : projectName.toLowerCase();
       content += `# Database Configuration
 DB_USER=postgres
 DB_PASSWORD=${dbPassword}
@@ -719,7 +872,10 @@ REDIS_PORT=6379
     }
 
     if (useS3) {
-      const s3Password = env === "production" ? "s3_production_secure_password_replace_me" : "admin_password_replace_me";
+      const s3Password =
+        env === "production"
+          ? "s3_production_secure_password_replace_me"
+          : "admin_password_replace_me";
       content += `# S3 Storage (MinIO) Configuration
 S3_ROOT_USER=admin
 S3_ROOT_PASSWORD=${s3Password}
@@ -785,7 +941,9 @@ NGINX_SSL_PORT=443
 
   // Write .env.example (mirrors .env.development)
   writeFileSync(join(ROOT, ".env.example"), buildEnvFile("development"));
-  consola.success("Generated environment files (.env.development, .env.production, etc.)");
+  consola.success(
+    "Generated environment files (.env.development, .env.production, etc.)",
+  );
 
   // Post-initialization Git Setup
   if (initGitChoice) {
@@ -793,14 +951,21 @@ NGINX_SSL_PORT=443
       consola.start("Re-initializing Git repository...");
       // Remove old git folder if exists (since it's copied from template)
       rmSync(join(ROOT, ".git"), { recursive: true, force: true });
-      
+
       const spawnSync = (cmd: string[]) => Bun.spawnSync(cmd, { cwd: ROOT });
       spawnSync(["git", "init"]);
       spawnSync(["git", "add", "."]);
-      spawnSync(["git", "commit", "-m", "initial: project setup from template"]);
-      consola.success("Initialized a fresh Git repository with initial commit!");
+      spawnSync([
+        "git",
+        "commit",
+        "-m",
+        "initial: project setup from template",
+      ]);
+      consola.success(
+        "Initialized a fresh Git repository with initial commit!",
+      );
     } catch (e) {
-      consola.error("Failed to initialize git repository: " + e);
+      consola.error(`Failed to initialize git repository: ${e}`);
     }
   }
 
@@ -808,7 +973,7 @@ NGINX_SSL_PORT=443
   if (cleanupChoice) {
     consola.info("Cleaning up initialization script...");
     const initScriptPath = import.meta.path;
-    
+
     // Remove scripts folder or just the script
     try {
       rmSync(initScriptPath, { force: true });
@@ -817,16 +982,16 @@ NGINX_SSL_PORT=443
       if (readdirSync(scriptsDir).length === 0) {
         rmSync(scriptsDir, { recursive: true, force: true });
       }
-      
+
       // Remove "init" script from root package.json
       const rootPkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-      if (rootPkg.scripts && rootPkg.scripts.init) {
+      if (rootPkg.scripts?.init) {
         delete rootPkg.scripts.init;
-        writeFileSync(pkgPath, JSON.stringify(rootPkg, null, 2) + "\n");
+        writeFileSync(pkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
       }
       consola.success("Removed initialization script and cleaned package.json");
     } catch (e) {
-      consola.error("Cleanup failed: " + e);
+      consola.error(`Cleanup failed: ${e}`);
     }
   }
 
@@ -835,9 +1000,9 @@ NGINX_SSL_PORT=443
 
   consola.log("");
   consola.log(c("Next steps:", colors.green));
-  consola.log("  1. " + c("bun install", colors.cyan));
-  consola.log("  2. " + c("cp .env.example .env.local", colors.cyan));
-  consola.log("  3. " + c("bun run dev", colors.cyan));
+  consola.log(`  1. ${c("bun install", colors.cyan)}`);
+  consola.log(`  2. ${c("cp .env.example .env.local", colors.cyan)}`);
+  consola.log(`  3. ${c("bun run dev", colors.cyan)}`);
   consola.log("");
 }
 

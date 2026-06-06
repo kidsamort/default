@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@cvai/ui", "@cvai/schema"],
+  transpilePackages: ["@fod/ui", "@fod/schema"],
 };
 
 export default config;

@@ -1,5 +1,5 @@
 {
-  "name": "@cvai/ui",
+  "name": "@default/ui",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@cvai/config": "workspace:*",
+    "@default/config": "workspace:*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "catalog:"

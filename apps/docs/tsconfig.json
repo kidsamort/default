@@ -1,5 +1,5 @@
 {
-  "extends": "@cvai/config/typescript/nextjs.json",
+  "extends": "@default/config/typescript/nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
