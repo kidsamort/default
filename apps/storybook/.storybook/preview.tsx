@@ -12,7 +12,7 @@ import {
   DocsContainer,
   type DocsContainerProps,
 } from "@storybook/addon-docs/blocks";
-import { useGlobals } from "@storybook/preview-api";
+import { useGlobals } from "storybook/preview-api";
 import type { Preview } from "@storybook/react-vite";
 
 const ExampleContainer = ({ children, ...props }: DocsContainerProps) => {
