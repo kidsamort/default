@@ -148,67 +148,145 @@ async function selectInteractive(message: string, options: string[], multi = fal
 }
 
 async function main() {
-  consola.box("🚀 Project Initializer");
+  consola.box("🚀 Project Initializer (Rin Mod)");
+
+  const args = process.argv.slice(2);
+  const getArgValue = (name: string): string | null => {
+    const idx = args.indexOf(name);
+    return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : null;
+  };
+  const hasArg = (name: string): boolean => args.includes(name);
+
+  const isNonInteractive = hasArg("--yes") || hasArg("-y") || hasArg("--non-interactive");
 
   // Get project name from package.json
   const pkgPath = join(ROOT, "package.json");
   const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
   let projectName = pkg.name.replace(/{{PROJECT_NAME}}/g, "my-app");
 
-  // Ask for project name
-  consola.log("");
-  const nameInput = await new Promise<string>((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+  if (isNonInteractive) {
+    projectName = getArgValue("--name") || projectName;
+  } else {
+    // Ask for project name
+    consola.log("");
+    const nameInput = await new Promise<string>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(c("? ", colors.yellow) + "Project name [" + c(projectName, colors.green) + "]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim() || projectName);
+      });
     });
-    rl.question(c("? ", colors.yellow) + "Project name [" + c(projectName, colors.green) + "]: ", (answer) => {
-      rl.close();
-      resolve(answer.trim() || projectName);
+    projectName = nameInput;
+  }
+
+  let orgPrefix = "default";
+  if (isNonInteractive) {
+    orgPrefix = getArgValue("--org") || orgPrefix;
+  } else {
+    // Ask for org/package prefix
+    const orgInput = await new Promise<string>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(c("? ", colors.yellow) + "Org/Package prefix [" + c("default", colors.green) + "]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim() || "default");
+      });
     });
-  });
-  projectName = nameInput;
+    orgPrefix = orgInput;
+  }
 
-  // Ask for org/package prefix
-  const orgInput = await new Promise<string>((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+  const allApps = ["web", "api", "docs", "storybook"];
+  let selectedApps = [0]; // default: web only
+  const appsArg = getArgValue("--apps");
+
+  if (appsArg) {
+    selectedApps = appsArg.split(",").map(a => allApps.indexOf(a.trim())).filter(i => i !== -1);
+  } else if (!isNonInteractive) {
+    consola.log("");
+    consola.start("Select Apps to Include");
+    const appOptions = [
+      "web (Next.js 16 + React 19)",
+      "api (Elysia + Bun)",
+      "docs (Fumadocs)",
+      "storybook (Component docs & testing)",
+    ];
+    selectedApps = await selectInteractive("Apps", appOptions, true) as number[];
+  }
+
+  const allPkgs = ["ui", "schema", "db", "config"];
+  let selectedPkgs = [0, 1, 2, 3]; // default: all
+  const pkgsArg = getArgValue("--pkgs");
+
+  if (pkgsArg) {
+    selectedPkgs = pkgsArg.split(",").map(p => allPkgs.indexOf(p.trim())).filter(i => i !== -1);
+  } else if (!isNonInteractive) {
+    consola.log("");
+    consola.start("Select Packages to Include");
+    const pkgOptions = [
+      "ui (React components with Radix UI)",
+      "schema (TypeBox schemas)",
+      "db (Database support with Drizzle ORM)",
+      "config (Shared TypeScript configs)",
+    ];
+    selectedPkgs = await selectInteractive("Packages", pkgOptions, true) as number[];
+  }
+
+  let dbChoice = 2; // None
+  const hasDbPkg = selectedPkgs.includes(allPkgs.indexOf("db"));
+  const dbArg = getArgValue("--db");
+
+  if (dbArg) {
+    if (dbArg.toLowerCase() === "postgres") dbChoice = 0;
+    else if (dbArg.toLowerCase() === "sqlite") dbChoice = 1;
+    else dbChoice = 2;
+  } else if (hasDbPkg) {
+    if (isNonInteractive) {
+      dbChoice = 1; // default to SQLite in non-interactive
+    } else {
+      consola.log("");
+      consola.start("Database Configuration");
+      const dbOptions = ["PostgreSQL", "SQLite", "None (skip DB setup)"];
+      dbChoice = await selectInteractive("Database", dbOptions, false) as number;
+    }
+  }
+
+  let initGitChoice = true;
+  if (hasArg("--no-git")) {
+    initGitChoice = false;
+  } else if (!isNonInteractive) {
+    consola.log("");
+    initGitChoice = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(c("? ", colors.yellow) + "Initialize fresh Git repository? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
     });
-    rl.question(c("? ", colors.yellow) + "Org/Package prefix [" + c("default", colors.green) + "]: ", (answer) => {
-      rl.close();
-      resolve(answer.trim() || "default");
+  }
+
+  let cleanupChoice = false;
+  if (hasArg("--cleanup")) {
+    cleanupChoice = true;
+  } else if (!isNonInteractive) {
+    cleanupChoice = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(c("? ", colors.yellow) + "Delete initialization script after complete? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
     });
-  });
-  const orgPrefix = orgInput;
-
-  consola.log("");
-
-  consola.start("Select Apps to Include");
-  const appOptions = [
-    "web (Next.js 16 + React 19)",
-    "api (Elysia + Bun)",
-    "docs (Fumadocs)",
-    "storybook (Component docs & testing)",
-  ];
-  const selectedApps = await selectInteractive("Apps", appOptions, true) as number[];
-
-  consola.log("");
-
-  consola.start("Select Packages to Include");
-  const pkgOptions = [
-    "ui (React components with Radix UI)",
-    "schema (TypeBox schemas)",
-    "db (PostgreSQL with Drizzle ORM)",
-    "config (Shared TypeScript configs)",
-  ];
-  const selectedPkgs = await selectInteractive("Packages", pkgOptions, true) as number[];
-
-  consola.log("");
-
-  consola.start("Database Configuration");
-  const dbOptions = ["PostgreSQL", "SQLite", "None (skip DB setup)"];
-  const dbChoice = await selectInteractive("Database", dbOptions, false) as number;
+  }
 
   // Process selections
   consola.log("");
@@ -299,7 +377,88 @@ async function main() {
   selectedApps.forEach((i) => updatePackageJson(appsDir, "apps", allApps[i]));
   selectedPkgs.forEach((i) => updatePackageJson(packagesDir, "packages", allPkgs[i]));
 
-  // Update imports in source files
+  // Setup database files correctly based on choice
+  if (selectedPkgs.includes(allPkgs.indexOf("db"))) {
+    const dbPath = join(packagesDir, "db");
+    if (existsSync(dbPath)) {
+      const dbPkgPath = join(dbPath, "package.json");
+      const dbPkg = JSON.parse(readFileSync(dbPkgPath, "utf-8"));
+      
+      if (dbChoice === 0) {
+        // PostgreSQL
+        dbPkg.dependencies = {
+          ...dbPkg.dependencies,
+          "drizzle-orm": "^0.38.0",
+          "postgres": "^3.4.5",
+        };
+        writeFileSync(dbPkgPath, JSON.stringify(dbPkg, null, 2) + "\n");
+        consola.success("Configured PostgreSQL package settings");
+      } else if (dbChoice === 1) {
+        // SQLite
+        dbPkg.dependencies = {
+          ...dbPkg.dependencies,
+          "drizzle-orm": "^0.38.0",
+          "better-sqlite3": "^11.3.0",
+        };
+        dbPkg.devDependencies = {
+          ...dbPkg.devDependencies,
+          "@types/better-sqlite3": "^7.6.12",
+        };
+        writeFileSync(dbPkgPath, JSON.stringify(dbPkg, null, 2) + "\n");
+
+        // Write SQLite Drizzle Config
+        const drizzleConfig = `import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
+  schema: "./src/schema.ts",
+  out: "./drizzle",
+  dialect: "sqlite",
+  dbCredentials: {
+    url: process.env.DATABASE_URL || "sqlite.db",
+  },
+});
+`;
+        writeFileSync(join(dbPath, "drizzle.config.ts"), drizzleConfig);
+
+        // Write SQLite db initialization
+        const dbIndex = `import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import * as schema from "./schema";
+
+const sqlite = new Database(process.env.DATABASE_URL || "sqlite.db");
+export const db = drizzle(sqlite, { schema });
+`;
+        writeFileSync(join(dbPath, "src/index.ts"), dbIndex);
+
+        // Write SQLite compatible schema
+        const dbSchema = `import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+// Example users table for SQLite - extend as needed
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: text("created_at").default(new Date().toISOString()).notNull(),
+  updatedAt: text("updated_at").default(new Date().toISOString()).notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+`;
+        writeFileSync(join(dbPath, "src/schema.ts"), dbSchema);
+        consola.success("Configured SQLite config, index, and schema files");
+      } else {
+        // DB package included but no DB configuration selected -> remove db package
+        rmSync(dbPath, { recursive: true, force: true });
+        const idx = tsconfig.references.findIndex((r: any) => r.path === "packages/db");
+        if (idx !== -1) tsconfig.references.splice(idx, 1);
+        writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
+        consola.info("Removed packages/db (DB type set to None)");
+      }
+    }
+  }
+
+  // Update imports for changed package prefixes
   const updateImports = (dir: string) => {
     const files: string[] = [];
     const findTsFiles = (d: string) => {
@@ -327,38 +486,35 @@ async function main() {
   selectedApps.forEach((i) => updateImports(join(appsDir, allApps[i])));
   selectedPkgs.forEach((i) => updateImports(join(packagesDir, allPkgs[i])));
 
-  // Setup database
-  if (dbChoice === 0 || dbChoice === 1) {
-    const dbPath = join(packagesDir, "db");
-    if (existsSync(dbPath)) {
-      const dbPkgPath = join(dbPath, "package.json");
-      const dbPkg = JSON.parse(readFileSync(dbPkgPath, "utf-8"));
-      
-      if (dbChoice === 0) {
-        // PostgreSQL
-        dbPkg.dependencies = {
-          ...dbPkg.dependencies,
-          "drizzle-orm": "^0.38.0",
-          "postgres": "^3.4.5",
-        };
-        consola.success("Configured PostgreSQL with Drizzle ORM");
-      } else {
-        // SQLite
-        dbPkg.dependencies = {
-          ...dbPkg.dependencies,
-          "drizzle-orm": "^0.38.0",
-          "better-sqlite3": "^11.0.0",
-        };
-        consola.success("Configured SQLite with Drizzle ORM");
+  // Recursively replace {{PROJECT_NAME}} across the entire workspace
+  const replaceProjectName = (dir: string) => {
+    if (!existsSync(dir)) return;
+    const entries = readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const path = join(dir, entry.name);
+      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.isDirectory()) {
+        replaceProjectName(path);
+      } else if (entry.isFile()) {
+        try {
+          let content = readFileSync(path, "utf-8");
+          if (content.includes("{{PROJECT_NAME}}")) {
+            content = content.replaceAll("{{PROJECT_NAME}}", projectName);
+            writeFileSync(path, content, "utf-8");
+            consola.info(`Updated placeholders in ${join(dir.replace(ROOT, ""), entry.name)}`);
+          }
+        } catch {}
       }
-      
-      writeFileSync(dbPkgPath, JSON.stringify(dbPkg, null, 2) + "\n");
     }
-  }
+  };
+  replaceProjectName(ROOT);
 
-  // Create .env.example
+  // Generate .env.example
+  const dbUrl = dbChoice === 1 
+    ? "sqlite.db" 
+    : `postgresql://user:password@localhost:5432/${projectName.toLowerCase().replace(/\s+/g, "-")}`;
   const envExample = `# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/${projectName}"
+DATABASE_URL="${dbUrl}"
 
 # API
 PORT=3001
@@ -367,9 +523,53 @@ PORT=3001
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 `;
   writeFileSync(join(ROOT, ".env.example"), envExample);
+  consola.success("Generated .env.example file");
+
+  // Post-initialization Git Setup
+  if (initGitChoice) {
+    try {
+      consola.start("Re-initializing Git repository...");
+      // Remove old git folder if exists (since it's copied from template)
+      rmSync(join(ROOT, ".git"), { recursive: true, force: true });
+      
+      const spawnSync = (cmd: string[]) => Bun.spawnSync(cmd, { cwd: ROOT });
+      spawnSync(["git", "init"]);
+      spawnSync(["git", "add", "."]);
+      spawnSync(["git", "commit", "-m", "initial: project setup from template"]);
+      consola.success("Initialized a fresh Git repository with initial commit!");
+    } catch (e) {
+      consola.error("Failed to initialize git repository: " + e);
+    }
+  }
+
+  // Self-cleanup
+  if (cleanupChoice) {
+    consola.info("Cleaning up initialization script...");
+    const initScriptPath = import.meta.path;
+    
+    // Remove scripts folder or just the script
+    try {
+      rmSync(initScriptPath, { force: true });
+      // Clean scripts folder if empty
+      const scriptsDir = dirname(initScriptPath);
+      if (readdirSync(scriptsDir).length === 0) {
+        rmSync(scriptsDir, { recursive: true, force: true });
+      }
+      
+      // Remove "init" script from root package.json
+      const rootPkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+      if (rootPkg.scripts && rootPkg.scripts.init) {
+        delete rootPkg.scripts.init;
+        writeFileSync(pkgPath, JSON.stringify(rootPkg, null, 2) + "\n");
+      }
+      consola.success("Removed initialization script and cleaned package.json");
+    } catch (e) {
+      consola.error("Cleanup failed: " + e);
+    }
+  }
 
   consola.log("");
-  consola.box("✨ Initialization Complete!");
+  consola.box("✨ Initialization Complete! (Rin verified)");
 
   consola.log("");
   consola.log(c("Next steps:", colors.green));
