@@ -1,10 +1,11 @@
 services:
-  web:
+  promo:
     build:
       context: ..
-      dockerfile: ./apps/web/Dockerfile
-    container_name: fod-web-${COMPOSE_ENV:-dev}
+      dockerfile: ./apps/promo/Dockerfile
+    container_name: fod-promo-${COMPOSE_ENV:-dev}
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-      PORT: ${WEB_PORT:-3000}
+      PORT: ${PROMO_PORT:-3000}
     restart: unless-stopped
+

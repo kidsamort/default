@@ -592,30 +592,22 @@ export type NewUser = typeof users.$inferInsert;
   const useS3 = includeS3;
   const useNginx = includeNginx;
   const useMailpit = includeMailpit;
-  const useApi = selectedApps.includes(allApps.indexOf("api"));
-  const useWeb = selectedApps.includes(allApps.indexOf("web"));
+  const useServer = selectedApps.includes(allApps.indexOf("server"));
+  const useClient = selectedApps.includes(allApps.indexOf("client"));
+  const usePromo = selectedApps.includes(allApps.indexOf("promo"));
 
   // Delete services files that are not selected (to keep things clean)
   if (!usePostgres && existsSync(join(servicesDir, "postgres.yml"))) rmSync(join(servicesDir, "postgres.yml"));
   if (!useRedis && existsSync(join(servicesDir, "redis.yml"))) rmSync(join(servicesDir, "redis.yml"));
   if (!useS3 && existsSync(join(servicesDir, "minio.yml"))) rmSync(join(servicesDir, "minio.yml"));
-  if (!useApi && existsSync(join(servicesDir, "elysia.yml"))) rmSync(join(servicesDir, "elysia.yml"));
-  if (!useWeb && existsSync(join(servicesDir, "nextjs.yml"))) rmSync(join(servicesDir, "nextjs.yml"));
-  if (!useWeb && existsSync(join(servicesDir, "vite.yml"))) rmSync(join(servicesDir, "vite.yml"));
+  if (!useServer && existsSync(join(servicesDir, "server.yml"))) rmSync(join(servicesDir, "server.yml"));
+  if (!usePromo && existsSync(join(servicesDir, "promo.yml"))) rmSync(join(servicesDir, "promo.yml"));
+  if (!useClient && existsSync(join(servicesDir, "client.yml"))) rmSync(join(servicesDir, "client.yml"));
   if (!useNginx && existsSync(join(servicesDir, "nginx.yml"))) {
     rmSync(join(servicesDir, "nginx.yml"));
     rmSync(join(dockerDir, "nginx"), { recursive: true, force: true });
   }
   if (!useMailpit && existsSync(join(servicesDir, "mailpit.yml"))) rmSync(join(servicesDir, "mailpit.yml"));
-
-  // If Vite was chosen, we can delete nextjs.yml. If Nextjs was chosen, we delete vite.yml.
-  if (useWeb) {
-    if (webFrameworkChoice === 0) {
-      if (existsSync(join(servicesDir, "vite.yml"))) rmSync(join(servicesDir, "vite.yml"));
-    } else {
-      if (existsSync(join(servicesDir, "nextjs.yml"))) rmSync(join(servicesDir, "nextjs.yml"));
-    }
-  }
 
   // Helper function to build Compose Files
   const buildComposeFile = (env: "dev" | "prod" | "local-prod" | "test") => {
@@ -628,14 +620,9 @@ export type NewUser = typeof users.$inferInsert;
       if (useMailpit) includes.push("./services/mailpit.yml");
     } else {
       // prod, local-prod, test
-      if (useApi) includes.push("./services/elysia.yml");
-      if (useWeb) {
-        if (webFrameworkChoice === 0) {
-          includes.push("./services/nextjs.yml");
-        } else {
-          includes.push("./services/vite.yml");
-        }
-      }
+      if (useServer) includes.push("./services/server.yml");
+      if (usePromo) includes.push("./services/promo.yml");
+      if (useClient) includes.push("./services/client.yml");
       if (useNginx) includes.push("./services/nginx.yml");
     }
 
@@ -661,13 +648,16 @@ export type NewUser = typeof users.$inferInsert;
       if (env === "dev" && useMailpit) {
         content += "  mailpit:\n    ports:\n      - \"${MAILPIT_PORT:-1025}:1025\"\n      - \"${MAILPIT_CONSOLE_PORT:-8025}:8025\"\n";
       }
-      // If Nginx is not used in local-prod, we expose web and api ports directly
+      // If Nginx is not used in local-prod, we expose ports directly
       if (env === "local-prod" && !useNginx) {
-        if (useApi) {
-          content += "  api:\n    ports:\n      - \"${PORT:-3001}:${PORT:-3001}\"\n";
+        if (useServer) {
+          content += "  server:\n    ports:\n      - \"${SERVER_PORT:-3001}:${SERVER_PORT:-3001}\"\n";
         }
-        if (useWeb) {
-          content += "  web:\n    ports:\n      - \"${WEB_PORT:-3000}:${WEB_PORT:-3000}\"\n";
+        if (useClient) {
+          content += "  client:\n    ports:\n      - \"${CLIENT_PORT:-3000}:${CLIENT_PORT:-3000}\"\n";
+        }
+        if (usePromo) {
+          content += "  promo:\n    ports:\n      - \"${PROMO_PORT:-3002}:${PROMO_PORT:-3002}\"\n";
         }
       }
     }
@@ -750,15 +740,28 @@ MAILPIT_CONSOLE_PORT=8025
 `;
     }
 
-    if (useApi || useWeb) {
-      content += `# Services Ports
-PORT=3001
-WEB_PORT=3000
+    if (useServer) {
+      content += `# Server API Port
+SERVER_PORT=3001
 `;
+    }
+    if (useClient) {
+      content += `# Client Frontend Port
+CLIENT_PORT=3000
+`;
+    }
+    if (usePromo) {
+      content += `# Promo Landing Port
+PROMO_PORT=3002
+`;
+    }
+
+    if (useClient || useServer || usePromo) {
+      content += "\n# API Endpoint URLs\n";
       if (env === "development") {
         content += `NEXT_PUBLIC_API_URL="http://localhost:3001"\n\n`;
       } else if (useNginx) {
-        content += `NEXT_PUBLIC_API_URL="/api"\n\n`; // Relative URL via Nginx routing
+        content += `NEXT_PUBLIC_API_URL="http://api.localhost"\n\n`;
       } else {
         content += `NEXT_PUBLIC_API_URL="http://localhost:3001"\n\n`;
       }

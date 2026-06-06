@@ -1,11 +1,12 @@
 services:
-  api:
+  server:
     build:
       context: ..
-      dockerfile: ./apps/api/Dockerfile
-    container_name: fod-api-${COMPOSE_ENV:-dev}
+      dockerfile: ./apps/server/Dockerfile
+    container_name: fod-server-${COMPOSE_ENV:-dev}
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-fod}
       REDIS_URL: redis://redis:6379
-      PORT: ${PORT:-3001}
+      PORT: ${SERVER_PORT:-3001}
     restart: unless-stopped
+

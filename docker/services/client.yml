@@ -1,0 +1,10 @@
+services:
+  client:
+    build:
+      context: ..
+      dockerfile: ./apps/client/Dockerfile
+    container_name: fod-client-${COMPOSE_ENV:-dev}
+    environment:
+      PORT: ${CLIENT_PORT:-3000}
+    restart: unless-stopped
+
