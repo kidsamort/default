@@ -458,48 +458,31 @@ export type NewUser = typeof users.$inferInsert;
     }
   }
 
-  // Update imports for changed package prefixes
-  const updateImports = (dir: string) => {
-    const files: string[] = [];
-    const findTsFiles = (d: string) => {
-      if (!existsSync(d)) return;
-      const entries = readdirSync(d, { withFileTypes: true });
-      for (const entry of entries) {
-        const path = join(d, entry.name);
-        if (entry.name === "node_modules") continue;
-        if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) {
-          files.push(path);
-        } else if (!entry.name.includes(".") && entry.isDirectory()) {
-          findTsFiles(path);
-        }
-      }
-    };
-    findTsFiles(dir);
-
-    for (const file of files) {
-      let content = readFileSync(file, "utf-8");
-      content = content.replace(/@cvai\//g, `@${orgPrefix}/`);
-      writeFileSync(file, content);
-    }
-  };
-
-  selectedApps.forEach((i) => updateImports(join(appsDir, allApps[i])));
-  selectedPkgs.forEach((i) => updateImports(join(packagesDir, allPkgs[i])));
-
-  // Recursively replace {{PROJECT_NAME}} across the entire workspace
-  const replaceProjectName = (dir: string) => {
+  // Recursively replace {{PROJECT_NAME}} and @cvai/ across the entire workspace
+  const customizeWorkspace = (dir: string) => {
     if (!existsSync(dir)) return;
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const path = join(dir, entry.name);
-      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".next" || entry.name === ".turbo") continue;
       if (entry.isDirectory()) {
-        replaceProjectName(path);
+        customizeWorkspace(path);
       } else if (entry.isFile()) {
         try {
           let content = readFileSync(path, "utf-8");
+          let changed = false;
+
           if (content.includes("{{PROJECT_NAME}}")) {
             content = content.replaceAll("{{PROJECT_NAME}}", projectName);
+            changed = true;
+          }
+
+          if (content.includes("@cvai/")) {
+            content = content.replaceAll("@cvai/", `@${orgPrefix}/`);
+            changed = true;
+          }
+
+          if (changed) {
             writeFileSync(path, content, "utf-8");
             consola.info(`Updated placeholders in ${join(dir.replace(ROOT, ""), entry.name)}`);
           }
@@ -507,7 +490,7 @@ export type NewUser = typeof users.$inferInsert;
       }
     }
   };
-  replaceProjectName(ROOT);
+  customizeWorkspace(ROOT);
 
   // Generate .env.example
   const dbUrl = dbChoice === 1 
