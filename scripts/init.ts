@@ -298,7 +298,6 @@ async function main() {
 
   // Remove unselected apps
   const appsDir = join(ROOT, "apps");
-  const allApps = ["web", "api", "docs", "storybook"];
   for (const app of allApps) {
     const appPath = join(appsDir, app);
     if (existsSync(appPath)) {
@@ -311,7 +310,6 @@ async function main() {
 
   // Remove unselected packages
   const packagesDir = join(ROOT, "packages");
-  const allPkgs = ["ui", "schema", "db", "config"];
   for (const pkgName of allPkgs) {
     const pkgPath = join(packagesDir, pkgName);
     if (existsSync(pkgPath)) {
