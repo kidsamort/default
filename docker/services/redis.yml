@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: fod-redis-${COMPOSE_ENV:-dev}
+    volumes:
+      - redisdata_${COMPOSE_ENV:-dev}:/data
+    restart: unless-stopped
+
+volumes:
+  redisdata_dev:
+  redisdata_prod:
+  redisdata_local-prod:
+  redisdata_test:

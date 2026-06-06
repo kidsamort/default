@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fod-db-${COMPOSE_ENV:-dev}
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-fod}
+    volumes:
+      - pgdata_${COMPOSE_ENV:-dev}:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata_dev:
+  pgdata_prod:
+  pgdata_local-prod:
+  pgdata_test:

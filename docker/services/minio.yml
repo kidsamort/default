@@ -1,0 +1,17 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: fod-s3-${COMPOSE_ENV:-dev}
+    environment:
+      MINIO_ROOT_USER: ${S3_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD:-admin_password_replace_me}
+    volumes:
+      - s3data_${COMPOSE_ENV:-dev}:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+volumes:
+  s3data_dev:
+  s3data_prod:
+  s3data_local-prod:
+  s3data_test:

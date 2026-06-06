@@ -1,0 +1,10 @@
+# Multi-environment Docker Compose configuration using native include directive.
+# Toggle environment via:
+#   COMPOSE_ENV=dev docker compose up
+#   COMPOSE_ENV=prod docker compose up
+# Or:
+#   docker compose --env-file .env.development up
+#   docker compose --env-file .env.production up
+
+include:
+  - path: ./docker/docker-compose.${COMPOSE_ENV:-dev}.yml

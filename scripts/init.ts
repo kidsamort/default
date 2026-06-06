@@ -4,8 +4,7 @@
  * Run with: bun run init
  */
 
-import { join, dirname } from "path";
-import { existsSync, writeFileSync, readFileSync, rmSync, readdirSync } from "fs";
+import { existsSync, writeFileSync, readFileSync, rmSync, readdirSync, renameSync } from "fs";
 import { createConsola } from "consola";
 import * as readline from "readline";
 
@@ -210,12 +209,32 @@ async function main() {
     consola.log("");
     consola.start("Select Apps to Include");
     const appOptions = [
-      "web (Next.js 16 + React 19)",
-      "api (Elysia + Bun)",
-      "docs (Fumadocs)",
-      "storybook (Component docs & testing)",
+      "web (Frontend web application)",
+      "api (Elysia + Bun API)",
+      "docs (Fumadocs documentation)",
+      "storybook (Component playground)",
     ];
     selectedApps = await selectInteractive("Apps", appOptions, true) as number[];
+  }
+
+  // Web Framework Selection (if web app is selected)
+  let webFrameworkChoice = 0; // 0: Nextjs, 1: Vite React
+  const hasWebApp = selectedApps.includes(allApps.indexOf("web"));
+  const frameworkArg = getArgValue("--framework");
+
+  if (hasWebApp) {
+    if (frameworkArg) {
+      if (frameworkArg.toLowerCase() === "vite" || frameworkArg.toLowerCase() === "react") {
+        webFrameworkChoice = 1;
+      } else {
+        webFrameworkChoice = 0;
+      }
+    } else if (!isNonInteractive) {
+      consola.log("");
+      consola.start("Frontend Framework Configuration");
+      const frameworkOptions = ["Next.js 16 (Full-stack Router)", "Vite + React 19 (SPA Client)"];
+      webFrameworkChoice = await selectInteractive("Frontend Framework", frameworkOptions, false) as number;
+    }
   }
 
   const allPkgs = ["ui", "schema", "db", "config"];
@@ -246,13 +265,61 @@ async function main() {
     else dbChoice = 2;
   } else if (hasDbPkg) {
     if (isNonInteractive) {
-      dbChoice = 1; // default to SQLite in non-interactive
+      dbChoice = 0; // default to PostgreSQL in non-interactive
     } else {
       consola.log("");
       consola.start("Database Configuration");
       const dbOptions = ["PostgreSQL", "SQLite", "None (skip DB setup)"];
       dbChoice = await selectInteractive("Database", dbOptions, false) as number;
     }
+  }
+
+  // Docker Services Selection
+  let includeRedis = true;
+  let includeS3 = true;
+  let includeNginx = true;
+  let includeMailpit = true;
+
+  if (isNonInteractive) {
+    includeRedis = !hasArg("--no-redis");
+    includeS3 = !hasArg("--no-s3");
+    includeNginx = !hasArg("--no-nginx");
+    includeMailpit = !hasArg("--no-mailpit");
+  } else {
+    consola.log("");
+    consola.start("Docker Services Configuration");
+    
+    includeRedis = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question(c("? ", colors.yellow) + "Include Redis cache support? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
+    });
+
+    includeS3 = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question(c("? ", colors.yellow) + "Include S3 Storage (MinIO) support? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
+    });
+
+    includeNginx = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question(c("? ", colors.yellow) + "Include Nginx reverse proxy in production? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
+    });
+
+    includeMailpit = await new Promise<boolean>((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question(c("? ", colors.yellow) + "Include Mailpit SMTP server for dev testing? [Y/n]: ", (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() !== "n");
+      });
+    });
   }
 
   let initGitChoice = true;
@@ -296,9 +363,34 @@ async function main() {
   pkg.name = projectName.toLowerCase().replace(/\s+/g, "-");
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
 
-  // Remove unselected apps
+  // Remove unselected apps and configure the chosen web framework
   const appsDir = join(ROOT, "apps");
+  if (selectedApps.includes(allApps.indexOf("web"))) {
+    if (webFrameworkChoice === 0) {
+      // Next.js
+      if (existsSync(join(appsDir, "web-next"))) {
+        rmSync(join(appsDir, "web"), { recursive: true, force: true });
+        renameSync(join(appsDir, "web-next"), join(appsDir, "web"));
+        consola.info("Configured apps/web with Next.js 16");
+      }
+      rmSync(join(appsDir, "web-vite"), { recursive: true, force: true });
+    } else {
+      // Vite
+      if (existsSync(join(appsDir, "web-vite"))) {
+        rmSync(join(appsDir, "web"), { recursive: true, force: true });
+        renameSync(join(appsDir, "web-vite"), join(appsDir, "web"));
+        consola.info("Configured apps/web with Vite + React 19");
+      }
+      rmSync(join(appsDir, "web-next"), { recursive: true, force: true });
+    }
+  } else {
+    rmSync(join(appsDir, "web-next"), { recursive: true, force: true });
+    rmSync(join(appsDir, "web-vite"), { recursive: true, force: true });
+    consola.info("Removed all web apps");
+  }
+
   for (const app of allApps) {
+    if (app === "web") continue;
     const appPath = join(appsDir, app);
     if (existsSync(appPath)) {
       if (!selectedApps.includes(allApps.indexOf(app))) {
@@ -490,21 +582,207 @@ export type NewUser = typeof users.$inferInsert;
   };
   customizeWorkspace(ROOT);
 
-  // Generate .env.example
-  const dbUrl = dbChoice === 1 
-    ? "sqlite.db" 
-    : `postgresql://user:password@localhost:5432/${projectName.toLowerCase().replace(/\s+/g, "-")}`;
-  const envExample = `# Database
-DATABASE_URL="${dbUrl}"
+  // Generate Docker Compose and Environment files dynamically
+  const dockerDir = join(ROOT, "docker");
+  const servicesDir = join(dockerDir, "services");
 
-# API
-PORT=3001
+  // Determine what services are included
+  const usePostgres = dbChoice === 0;
+  const useRedis = includeRedis;
+  const useS3 = includeS3;
+  const useNginx = includeNginx;
+  const useMailpit = includeMailpit;
+  const useApi = selectedApps.includes(allApps.indexOf("api"));
+  const useWeb = selectedApps.includes(allApps.indexOf("web"));
 
-# Next.js
-NEXT_PUBLIC_API_URL="http://localhost:3001"
+  // Delete services files that are not selected (to keep things clean)
+  if (!usePostgres && existsSync(join(servicesDir, "postgres.yml"))) rmSync(join(servicesDir, "postgres.yml"));
+  if (!useRedis && existsSync(join(servicesDir, "redis.yml"))) rmSync(join(servicesDir, "redis.yml"));
+  if (!useS3 && existsSync(join(servicesDir, "minio.yml"))) rmSync(join(servicesDir, "minio.yml"));
+  if (!useApi && existsSync(join(servicesDir, "elysia.yml"))) rmSync(join(servicesDir, "elysia.yml"));
+  if (!useWeb && existsSync(join(servicesDir, "nextjs.yml"))) rmSync(join(servicesDir, "nextjs.yml"));
+  if (!useWeb && existsSync(join(servicesDir, "vite.yml"))) rmSync(join(servicesDir, "vite.yml"));
+  if (!useNginx && existsSync(join(servicesDir, "nginx.yml"))) {
+    rmSync(join(servicesDir, "nginx.yml"));
+    rmSync(join(dockerDir, "nginx"), { recursive: true, force: true });
+  }
+  if (!useMailpit && existsSync(join(servicesDir, "mailpit.yml"))) rmSync(join(servicesDir, "mailpit.yml"));
+
+  // If Vite was chosen, we can delete nextjs.yml. If Nextjs was chosen, we delete vite.yml.
+  if (useWeb) {
+    if (webFrameworkChoice === 0) {
+      if (existsSync(join(servicesDir, "vite.yml"))) rmSync(join(servicesDir, "vite.yml"));
+    } else {
+      if (existsSync(join(servicesDir, "nextjs.yml"))) rmSync(join(servicesDir, "nextjs.yml"));
+    }
+  }
+
+  // Helper function to build Compose Files
+  const buildComposeFile = (env: "dev" | "prod" | "local-prod" | "test") => {
+    let includes: string[] = [];
+    if (usePostgres) includes.push("./services/postgres.yml");
+    if (useRedis) includes.push("./services/redis.yml");
+    if (useS3) includes.push("./services/minio.yml");
+
+    if (env === "dev") {
+      if (useMailpit) includes.push("./services/mailpit.yml");
+    } else {
+      // prod, local-prod, test
+      if (useApi) includes.push("./services/elysia.yml");
+      if (useWeb) {
+        if (webFrameworkChoice === 0) {
+          includes.push("./services/nextjs.yml");
+        } else {
+          includes.push("./services/vite.yml");
+        }
+      }
+      if (useNginx) includes.push("./services/nginx.yml");
+    }
+
+    if (includes.length === 0) return "";
+
+    let content = "include:\n";
+    for (const inc of includes) {
+      content += `  - path: ${inc}\n`;
+    }
+
+    // Add dev-specific overrides (port mappings)
+    if (env === "dev" || env === "local-prod") {
+      content += "\nservices:\n";
+      if (usePostgres) {
+        content += "  db:\n    ports:\n      - \"${DB_PORT:-5432}:5432\"\n";
+      }
+      if (useRedis) {
+        content += "  redis:\n    ports:\n      - \"${REDIS_PORT:-6379}:6379\"\n";
+      }
+      if (useS3) {
+        content += "  minio:\n    ports:\n      - \"${MINIO_PORT:-9000}:9000\"\n      - \"${MINIO_CONSOLE_PORT:-9001}:9001\"\n";
+      }
+      if (env === "dev" && useMailpit) {
+        content += "  mailpit:\n    ports:\n      - \"${MAILPIT_PORT:-1025}:1025\"\n      - \"${MAILPIT_CONSOLE_PORT:-8025}:8025\"\n";
+      }
+      // If Nginx is not used in local-prod, we expose web and api ports directly
+      if (env === "local-prod" && !useNginx) {
+        if (useApi) {
+          content += "  api:\n    ports:\n      - \"${PORT:-3001}:${PORT:-3001}\"\n";
+        }
+        if (useWeb) {
+          content += "  web:\n    ports:\n      - \"${WEB_PORT:-3000}:${WEB_PORT:-3000}\"\n";
+        }
+      }
+    }
+
+    return content;
+  };
+
+  // Write compose files inside docker folder
+  writeFileSync(join(dockerDir, "docker-compose.dev.yml"), buildComposeFile("dev"));
+  writeFileSync(join(dockerDir, "docker-compose.prod.yml"), buildComposeFile("prod"));
+  writeFileSync(join(dockerDir, "docker-compose.local-prod.yml"), buildComposeFile("local-prod"));
+  writeFileSync(join(dockerDir, "docker-compose.test.yml"), buildComposeFile("test"));
+
+  consola.success("Generated dynamic Docker Compose configurations");
+
+  // Helper to generate Env Files
+  const buildEnvFile = (env: "development" | "production" | "local-prod" | "test") => {
+    let composeEnv = "dev";
+    if (env === "production") composeEnv = "prod";
+    if (env === "local-prod") composeEnv = "local-prod";
+    if (env === "test") composeEnv = "test";
+
+    let content = `# Docker Compose Environment
+COMPOSE_ENV=${composeEnv}
+PROJECT_NAME=${projectName.toLowerCase().replace(/\s+/g, "-")}
+
 `;
-  writeFileSync(join(ROOT, ".env.example"), envExample);
-  consola.success("Generated .env.example file");
+
+    if (usePostgres) {
+      const dbPassword = env === "production" ? "production_secure_password_replace_me" : "postgres";
+      const dbName = env === "production" ? `${projectName.toLowerCase()}_prod` : projectName.toLowerCase();
+      content += `# Database Configuration
+DB_USER=postgres
+DB_PASSWORD=${dbPassword}
+DB_NAME=${dbName}
+DB_PORT=5432
+`;
+      // Connection string for local dev / prod
+      if (env === "development") {
+        content += `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${dbName}"\n\n`;
+      } else {
+        content += `DATABASE_URL="postgresql://postgres:${dbPassword}@db:5432/${dbName}"\n\n`;
+      }
+    } else if (dbChoice === 1) {
+      // SQLite
+      content += `# SQLite Database
+DATABASE_URL="sqlite.db"\n\n`;
+    }
+
+    if (useRedis) {
+      content += `# Redis Configuration
+REDIS_PORT=6379
+`;
+      if (env === "development") {
+        content += `REDIS_URL="redis://localhost:6379"\n\n`;
+      } else {
+        content += `REDIS_URL="redis://redis:6379"\n\n`;
+      }
+    }
+
+    if (useS3) {
+      const s3Password = env === "production" ? "s3_production_secure_password_replace_me" : "admin_password_replace_me";
+      content += `# S3 Storage (MinIO) Configuration
+S3_ROOT_USER=admin
+S3_ROOT_PASSWORD=${s3Password}
+MINIO_PORT=9000
+MINIO_CONSOLE_PORT=9001
+`;
+      if (env === "development") {
+        content += `S3_ENDPOINT="http://localhost:9000"\n\n`;
+      } else {
+        content += `S3_ENDPOINT="http://minio:9000"\n\n`;
+      }
+    }
+
+    if (useMailpit && env === "development") {
+      content += `# Mailpit Configuration
+MAILPIT_PORT=1025
+MAILPIT_CONSOLE_PORT=8025
+`;
+    }
+
+    if (useApi || useWeb) {
+      content += `# Services Ports
+PORT=3001
+WEB_PORT=3000
+`;
+      if (env === "development") {
+        content += `NEXT_PUBLIC_API_URL="http://localhost:3001"\n\n`;
+      } else if (useNginx) {
+        content += `NEXT_PUBLIC_API_URL="/api"\n\n`; // Relative URL via Nginx routing
+      } else {
+        content += `NEXT_PUBLIC_API_URL="http://localhost:3001"\n\n`;
+      }
+    }
+
+    if (useNginx && (env === "production" || env === "local-prod")) {
+      content += `# Nginx Ports
+NGINX_PORT=80
+NGINX_SSL_PORT=443
+`;
+    }
+
+    return content;
+  };
+
+  // Write Env Files
+  writeFileSync(join(ROOT, ".env.development"), buildEnvFile("development"));
+  writeFileSync(join(ROOT, ".env.production"), buildEnvFile("production"));
+  writeFileSync(join(ROOT, ".env.local-prod"), buildEnvFile("local-prod"));
+  writeFileSync(join(ROOT, ".env.test"), buildEnvFile("test"));
+
+  // Write .env.example (mirrors .env.development)
+  writeFileSync(join(ROOT, ".env.example"), buildEnvFile("development"));
+  consola.success("Generated environment files (.env.development, .env.production, etc.)");
 
   // Post-initialization Git Setup
   if (initGitChoice) {
